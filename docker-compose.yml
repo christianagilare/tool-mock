@@ -1,0 +1,10 @@
+services:
+  mock-ticket-tool:
+    build: .
+    container_name: mock-ticket-tool
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
