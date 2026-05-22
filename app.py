@@ -157,17 +157,7 @@ def generate_payment_link():
     # Check idempotency
     if idempotency_key in PAYMENT_LINKS_BY_IDEMPOTENCY:
         print(f"[Idempotency] Returning cached response for key: {idempotency_key}")
-        # Re-trigger webhook just in case they are retrying because the previous webhook failed or wasn't processed
-        cached_res = PAYMENT_LINKS_BY_IDEMPOTENCY[idempotency_key]
-        cached_data = cached_res["data"]
-        session_id = payload.get("sessionId", "6413a38a-c65e-477f-8e89-973df6b0eb46")
-        trigger_webhook_async(
-            session_id,
-            cached_data["externalReference"],
-            cached_data["amount"],
-            cached_data["currency"]
-        )
-        return jsonify(cached_res), 200
+        return jsonify(PAYMENT_LINKS_BY_IDEMPOTENCY[idempotency_key]), 200
         
     account_id = payload.get("accountId")
     amount = payload.get("amount")
@@ -210,9 +200,6 @@ def generate_payment_link():
         "amount": amount,
         "currency": currency
     }
-    
-    # Trigger webhook
-    trigger_webhook_async(session_id, external_ref, amount, currency)
     
     return jsonify(response_data), 200
 
