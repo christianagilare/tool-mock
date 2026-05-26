@@ -141,6 +141,77 @@ def get_account(accountId):
         "data": account_data
     }), 200
 
+# --- 1.1 GET — Catálogo de ofertas de negociación ---
+@app.route('/api/collections/accounts/<accountId>/negotiation-offers', methods=['GET'])
+def get_negotiation_offers(accountId):
+    client_id = request.args.get('clientId')
+    conversation_id = request.args.get('conversationId')
+    contact_id = request.args.get('contactId')
+    
+    print(f"\n--- GET NEGOTIATION OFFERS for {accountId} ---")
+    print(f"clientId: {client_id}, conversationId: {conversation_id}, contactId: {contact_id}")
+    
+    if accountId == "ACC-001":
+        return jsonify({
+            "success": True,
+            "data": {
+                "accountId": "ACC-001",
+                "currentBalance": 85.50,
+                "currency": "USD",
+                "offers": [
+                    {
+                        "offerId": "OFFER-SETTLE-70",
+                        "type": "SETTLEMENT",
+                        "title": "Liquidación al 70%",
+                        "description": "Paga USD 59.85 y saldas la deuda por completo.",
+                        "amount": 59.85,
+                        "discountPercent": 30,
+                        "currency": "USD",
+                        "expiresAt": "2026-12-31",
+                        "requiresHumanApproval": True
+                    },
+                    {
+                        "offerId": "OFFER-PARTIAL-50",
+                        "type": "PARTIAL_PAYMENT",
+                        "title": "Abono mínimo congelación de mora",
+                        "description": "Abona USD 42.75 (50% del saldo) y congelamos intereses por 30 días.",
+                        "amount": 42.75,
+                        "discountPercent": 0,
+                        "currency": "USD",
+                        "expiresAt": "2026-09-30",
+                        "requiresHumanApproval": True
+                    },
+                    {
+                        "offerId": "OFFER-EXTENSION-15",
+                        "type": "EXTENSION",
+                        "title": "Prórroga 15 días sin recargo",
+                        "description": "Nueva fecha límite sin penalidad si confirmas por escrito con un asesor.",
+                        "amount": None,
+                        "discountPercent": 0,
+                        "currency": "USD",
+                        "expiresAt": "2026-08-15",
+                        "requiresHumanApproval": True
+                    }
+                ]
+            }
+        }), 200
+    elif accountId == "ACC-002":
+        return jsonify({
+            "success": True,
+            "data": {
+                "accountId": "ACC-002",
+                "currentBalance": 0,
+                "currency": "USD",
+                "offers": []
+            }
+        }), 200
+    else:
+        return jsonify({
+            "success": False,
+            "message": "No hay ofertas de negociación para esta cuenta",
+            "data": None
+        }), 404
+
 # --- 2. POST — Generar link de pago ---
 @app.route('/api/collections/payment-links', methods=['POST'])
 def generate_payment_link():
