@@ -38,6 +38,8 @@ ACCOUNTS = {
 PAYMENT_LINKS_BY_IDEMPOTENCY = {}
 PAYMENT_LINKS_BY_REF = {}
 PAYMENT_PROMISES_BY_IDEMPOTENCY = {}
+PAYMENT_PROMISES_COUNTER = 0
+
 
 def trigger_webhook_async(session_id, external_reference, amount, currency):
     def run():
@@ -206,6 +208,7 @@ def generate_payment_link():
 # --- 3. POST — Registrar promesa de pago (PTP) ---
 @app.route('/api/collections/payment-promises', methods=['POST'])
 def register_payment_promise():
+    global PAYMENT_PROMISES_COUNTER
     payload = request.get_json(silent=True) or {}
     print(f"\n--- POST PAYMENT PROMISE ---")
     print(f"Payload: {payload}")
@@ -261,7 +264,10 @@ def register_payment_promise():
         
     try:
         promised_date_parsed = datetime.datetime.strptime(promised_date, "%Y-%m-%d").date()
-        if promised_date_parsed < datetime.date.today():
+        # Use user local timezone (UTC-5) to determine if a date is in the past
+        tz_utc5 = datetime.timezone(datetime.timedelta(hours=-5))
+        today_utc5 = datetime.datetime.now(tz_utc5).date()
+        if promised_date_parsed < today_utc5:
             return jsonify({
                 "success": False,
                 "message": "promisedDate cannot be in the past",
@@ -275,8 +281,10 @@ def register_payment_promise():
         }), 400
         
     promise_id = str(uuid.uuid4())
-    # If externalReference is passed in request, return it, otherwise generate one
-    external_ref = payload.get("externalReference") or f"PTP-MOCK-{str(uuid.uuid4())[:8].upper()}"
+    # Increment counter and generate sequential external reference (e.g., PTP-MOCK-001)
+    PAYMENT_PROMISES_COUNTER += 1
+    external_ref = payload.get("externalReference") or f"PTP-MOCK-{PAYMENT_PROMISES_COUNTER:03d}"
+    currency = payload.get("currency") or "USD"
     
     response_data = {
         "success": True,
@@ -285,7 +293,7 @@ def register_payment_promise():
             "externalReference": external_ref,
             "accountId": account_id,
             "promisedAmount": promised_amount,
-            "currency": payload.get("currency", "USD"),
+            "currency": currency,
             "promisedDate": promised_date,
             "status": "PENDING"
         }
